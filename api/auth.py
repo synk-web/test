@@ -143,6 +143,31 @@ async def refresh_token(refresh_token: str):
         )
 
 
+@router.get("/config")
+async def get_auth_config():
+    """
+    프론트엔드용 인증 설정 정보 반환
+    Supabase URL과 anon key는 공개되어도 안전함
+    """
+    import os
+    from utils.config import load_env
+    load_env()
+    
+    supabase_url = os.getenv("SUPERBASE_URL")
+    supabase_key = os.getenv("SUPERBASE_API_KEY")
+    
+    if not supabase_url or not supabase_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase 설정이 없습니다."
+        )
+    
+    return {
+        "supabase_url": supabase_url,
+        "supabase_anon_key": supabase_key
+    }
+
+
 @router.get("/me", response_model=UserInfo)
 async def get_current_user_info(current_user: UserInfo = Depends(get_current_user)):
     """
