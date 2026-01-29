@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNK MVP - 멀티 캐릭터 챗</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 오프닝 선택 화면 - 더 이상 사용 안 함 */
+        .opening-screen {
+            display: none;
+        }
+
+        .opening-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .opening-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .scenario-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .scenario-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--card-color);
+        }
+
+        .scenario-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .scenario-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .scenario-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+        }
+
+        .scenario-description {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        /* 채팅 화면 */
+        .chat-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-screen.active {
+            display: flex;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .location-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .characters-info {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .character-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.character {
+            justify-content: flex-start;
+        }
+
+        .message.system {
+            justify-content: center;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.character .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.system .message-bubble {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        /* 캐릭터별 색상 */
+        .message.character[data-character-id="npc_joo_changyun"] .message-bubble {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .message.character[data-character-id="npc_hwang_inha"] .message-bubble {
+            border-left: 4px solid #9b59b6;
+        }
+
+        .message.character[data-character-id="npc_pyo_daeun"] .message-bubble {
+            border-left: 4px solid #3498db;
+        }
+
+        .message.character[data-character-id="npc_min_areum"] .message-bubble {
+            border-left: 4px solid #f39c12;
+        }
+
+        .message.character[data-character-id="npc_go_seonha"] .message-bubble {
+            border-left: 4px solid #e91e63;
+        }
+
+        .message.character[data-character-id="npc_shin_chaerin"] .message-bubble {
+            border-left: 4px solid #c0392b;
+        }
+
+        .message.character[data-character-id="npc_kwon_woomi"] .message-bubble {
+            border-left: 4px solid #16a085;
+        }
+
+        .message.character[data-character-id="npc_lee_gaeun"] .message-bubble {
+            border-left: 4px solid #27ae60;
+        }
+
+        .message.character[data-character-id="npc_sim_naeun"] .message-bubble {
+            border-left: 4px solid #34495e;
+        }
+
+        .message-header {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+
+        .message-content {
+            font-size: 15px;
+        }
+
+        /* 선택지 버튼 영역 */
+        .choice-buttons {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .choice-buttons.hidden {
+            display: none;
+        }
+
+        .choice-button {
+            padding: 10px 18px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .choice-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .input-area {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+
+        .input-area button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .input-area button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .turn-counter {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        /* 이모지 리액션 버튼 (명세서 v2) */
+        .emoji-reactions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 10px 0;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .emoji-button {
+            background: #f8f8f8;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+            min-height: 60px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .emoji-button:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+
+        .emoji-button:hover {
+            background: #f0f0f0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .emoji-button.active {
+            background: #e8f0fe;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        .emoji-button.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            background: rgba(0, 122, 255, 0.1);
+            pointer-events: none;
+        }
+
+        .emoji-button.❤️ {
+            background: #fff5f5;
+        }
+
+        .emoji-button.❤️:hover {
+            background: #ffe5e5;
+        }
+
+        .emoji-button.❤️.active {
+            background: #ffebee;
+            box-shadow: 0 2px 8px rgba(244, 67, 54, 0.25);
+        }
+
+        .emoji-button.❤️.active::before {
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .emoji-button.💢 {
+            background: #fff5f5;
+        }
+
+        .emoji-button.💢:hover {
+            background: #ffe5e5;
+        }
+
+        .emoji-button.💢.active {
+            background: #ffebee;
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.25);
+        }
+
+        .emoji-button.💢.active::before {
+            background: rgba(211, 47, 47, 0.1);
+        }
+
+        .emoji-button.🔥 {
+            background: #fff8e1;
+        }
+
+        .emoji-button.🔥:hover {
+            background: #ffecb3;
+        }
+
+        .emoji-button.🔥.active {
+            background: #fff3cd;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.25);
+        }
+
+        .emoji-button.🔥.active::before {
+            background: rgba(255, 152, 0, 0.1);
+        }
+
+        .emoji-button.⭐ {
+            background: #fffef0;
+        }
+
+        .emoji-button.⭐:hover {
+            background: #fff9c4;
+        }
+
+        .emoji-button.⭐.active {
+            background: #fffde7;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.25);
+        }
+
+        .emoji-button.⭐.active::before {
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .emoji-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .emoji-label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            font-weight: 500;
+            letter-spacing: -0.2px;
+        }
+
+        .emoji-button.active .emoji-label {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Scene Dashboard (v2.1) */
+        .scene-dashboard {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 20px 30px;
+            max-height: 300px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .scene-dashboard.hidden {
+            display: none;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .location-badge {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .tension-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #666;
+            margin-left: auto;
+        }
+
+        .bar-container {
+            width: 150px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .story-summary {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .story-summary h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .story-summary p {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+            margin: 0;
+            white-space: pre-line;
+        }
+
+        .character-states {
+            margin-bottom: 15px;
+        }
+
+        .character-states h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .char-state-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid #e0e0e0;
+            transition: all 0.2s;
+        }
+
+        .char-state-card.recent {
+            border-left-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .char-state-card.inactive {
+            opacity: 0.6;
+        }
+
+        .char-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .char-mood {
+            font-size: 18px;
+        }
+
+        .char-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .char-attention {
+            font-size: 11px;
+            color: #888;
+            margin-left: auto;
+        }
+
+        .recent-badge {
+            font-size: 10px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .char-thought {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            margin-top: 4px;
+            padding-left: 8px;
+        }
+
+        .current-focus {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .current-focus span {
+            color: #888;
+        }
+
+        .current-focus strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* 서브 리액션 패널 */
+        .sub-reactions-panel {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .sub-reactions-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .sub-reactions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sub-reaction-item {
+            background: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .reaction-character {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .reaction-text {
+            color: #666;
+        }
+
+        .reaction-thought {
+            color: #888;
+            font-style: italic;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .scene-dashboard::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scene-dashboard::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .scene-dashboard::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .scene-dashboard::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @media (max-width: 768px) {
+            .scenarios-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scene-dashboard {
+                padding: 15px 20px;
+                max-height: 250px;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .tension-bar {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .bar-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 채팅 화면 -->
+    <div class="container chat-screen" id="chatScreen">
+        <div class="header">
+            <h1>💬 SYNK MVP - 멀티 캐릭터 챗</h1>
+            <div class="location-info" id="locationInfo">
+                <span id="locationName">-</span>
+            </div>
+            <div class="characters-info" id="charactersInfo"></div>
+        </div>
+
+        <!-- Scene Dashboard (v2.1) -->
+        <div class="scene-dashboard hidden" id="sceneDashboard">
+            <div class="dashboard-header">
+                <h3>🎭 현재 상황</h3>
+                <span class="location-badge" id="currentLocation">📍 -</span>
+                <div class="tension-bar">
+                    <span>긴장도:</span>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="tensionFill" style="width: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="story-summary" id="storySummary">
+                <h4>📖 스토리 요약</h4>
+                <p id="storySummaryText">-</p>
+            </div>
+            
+            <div class="character-states" id="characterStates">
+                <h4>👥 캐릭터 상태</h4>
+                <!-- 동적 생성 -->
+            </div>
+            
+            <div class="current-focus" id="currentFocus">
+                <span>🎯 현재 대화:</span>
+                <strong id="currentFocusText">-</strong>
+            </div>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <!-- 대화 메시지들이 여기에 표시됩니다 -->
+        </div>
+
+        <!-- 선택지 버튼 영역 -->
+        <div class="choice-buttons hidden" id="choiceButtons"></div>
+
+        <div class="input-area">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="메시지를 입력하세요... (캐릭터 이름을 부르면 그 캐릭터가 응답합니다)" 
+                disabled
+                onkeypress="if(event.key === 'Enter') sendMessage()"
+            >
+            <button id="sendButton" onclick="sendMessage()" disabled>전송</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let currentLocationId = '';
+        let currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
+        let sessionId = null;
+        let currentCharacters = [];
+        let gameStarted = false;
+        let openingScenarios = [];
+        let waitingForOpeningChoice = false;
+        let messageHistory = [];  // 턴 히스토리 (이모지 리액션용)
+
+        // 초기화: 채팅방에 바로 진입
+        async function initializeChat() {
+            // 채팅 화면 표시
+            document.getElementById('chatScreen').classList.add('active');
+            
+            // 시스템 메시지 표시
+            addMessage('system', '명월 아카데미에 오신 것을 환영합니다. 당신의 이야기는 어디서 시작됩니까?');
+            
+            // 오프닝 시나리오 로드 및 선택지 표시
+            await loadOpeningScenarios();
+        }
+
+        // 오프닝 시나리오 로드 및 선택지 버튼 표시
+        async function loadOpeningScenarios() {
+            try {
+                const response = await fetch(`${API_BASE}/api/opening/scenarios`);
+                const data = await response.json();
+                
+                if (data.success && data.scenarios) {
+                    openingScenarios = data.scenarios;
+                    showOpeningChoices(data.scenarios);
+                }
+            } catch (error) {
+                console.error('시나리오 로드 오류:', error);
+                showError('시나리오를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 오프닝 선택지 버튼 표시
+        function showOpeningChoices(scenarios) {
+            const choiceButtonsDiv = document.getElementById('choiceButtons');
+            choiceButtonsDiv.innerHTML = '';
+            choiceButtonsDiv.classList.remove('hidden');
+            
+            scenarios.forEach(scenario => {
+                const button = document.createElement('button');
+                button.className = 'choice-button';
+                button.innerHTML = `${scenario.icon} ${scenario.title} - ${scenario.subtitle}`;
+                button.onclick = () => selectScenario(scenario.id);
+                choiceButtonsDiv.appendChild(button);
+            });
+            
+            waitingForOpeningChoice = true;
+        }
+
+        // 시나리오 선택 (버튼 클릭 시)
+        async function selectScenario(scenarioId) {
+            if (!waitingForOpeningChoice) return;
+            
+            const scenario = openingScenarios.find(s => s.id === scenarioId);
+            if (!scenario) return;
+            
+            // 선택지 버튼 숨기기
+            document.getElementById('choiceButtons').classList.add('hidden');
+            waitingForOpeningChoice = false;
+            
+            // 시나리오 선택 처리
+            await sendMessageWithScenario(scenarioId);
+        }
+
+        // 시나리오 선택 메시지 전송
+        async function sendMessageWithScenario(scenarioId) {
+            const scenario = openingScenarios.find(s => s.id === scenarioId);
+            if (!scenario) return;
+            
+            // 사용자 메시지 표시
+            const scenarioText = `${scenario.title} - ${scenario.subtitle}`;
+            addMessage('user', scenarioText, '나');
+            
+            // 로딩 표시
+            const loadingId = addLoadingMessage();
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/opening/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        scenario_id: scenarioId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // 로딩 제거
+                removeLoadingMessage(loadingId);
+                
+                if (response.ok) {
+                    // 게임 시작
+                    startGame(data);
+                } else {
+                    showError(data.detail || '게임 시작 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                removeLoadingMessage(loadingId);
+                console.error('시나리오 선택 오류:', error);
+                showError('게임을 시작하는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 게임 시작
+        async function startGame(openingData) {
+            gameStarted = true;
+            currentLocationId = openingData.location;
+            sessionId = openingData.session_id;
+            
+            // 장소 정보 업데이트
+            document.getElementById('locationName').textContent = openingData.location_name;
+            
+            // 장소의 캐릭터들 가져오기
+            try {
+                const response = await fetch(`${API_BASE}/api/character/location/${currentLocationId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentCharacters = data.characters || [];
+                    updateCharactersInfo(currentCharacters);
+                }
+            } catch (error) {
+                console.error('캐릭터 정보 로드 오류:', error);
+            }
+            
+            // 첫 대사 표시
+            addMessage('character', openingData.opening_line, openingData.npc_name, openingData.npc_id);
+            
+            // 입력 활성화
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+            document.getElementById('messageInput').focus();
+        }
+
+        // 캐릭터 정보 업데이트
+        function updateCharactersInfo(characters) {
+            const infoDiv = document.getElementById('charactersInfo');
+            if (characters.length === 0) {
+                infoDiv.innerHTML = '';
+                return;
+            }
+            
+            infoDiv.innerHTML = `<span style="opacity: 0.8;">캐릭터:</span> ` + 
+                characters.map(c => `<span class="character-badge">${c.name}</span>`).join('');
+        }
+
+        // 메시지 전송
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 오프닝 선택 대기 중이면 일반 메시지로 처리하지 않음
+            if (waitingForOpeningChoice) {
+                return;
+            }
+            
+            // 게임이 시작되지 않았으면 일반 채팅 불가
+            if (!currentLocationId || !gameStarted) {
+                showError('먼저 오프닝 시나리오를 선택해주세요.');
+                return;
+            }
+            
+            // 사용자 메시지 표시
+            addMessage('user', message, '나');
+            
+            // 메시지 히스토리에 저장 (이모지 리액션용)
+            messageHistory.push({
+                type: 'user',
+                message: message,
+                timestamp: new Date()
+            });
+            
+            input.value = '';
+            
+            // 로딩 표시
+            const loadingId = addLoadingMessage();
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/chat/location/${currentLocationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        location_id: currentLocationId,
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // 로딩 제거
+                removeLoadingMessage(loadingId);
+                
+                if (response.ok) {
+                    // 씬 리액션 시스템 처리
+                    // 1. 메인 응답 표시 (채팅창에 표시) - 제한 없음
+                    if (data.main_responses && data.main_responses.length > 0) {
+                        // 모든 메인 응답자 표시 (제한 없음)
+                        data.main_responses.forEach((mainResp, index) => {
+                            setTimeout(() => {
+                                addMessage(
+                                    'character', 
+                                    mainResp.message, 
+                                    mainResp.character_name, 
+                                    mainResp.character_id, 
+                                    data.conversation_turn, 
+                                    null, 
+                                    data.turn_id, 
+                                    mainResp.inner_thought
+                                );
+                            }, index * 200); // 순차적으로 표시
+                        });
+                    } else if (data.character_response) {
+                        // 하위 호환성: 기존 응답 구조
+                        addMessage('character', data.character_response, data.character_name, data.character_id, data.conversation_turn, data.relationship_summary, data.turn_id, data.inner_thought);
+                    }
+                    
+                    // 2. 서브 리액션 표시
+                    if (data.sub_reactions && data.sub_reactions.length > 0) {
+                        // 서브 리액션 패널 생성
+                        const subReactionsDiv = document.createElement('div');
+                        subReactionsDiv.className = 'sub-reactions-panel';
+                        subReactionsDiv.innerHTML = '<div class="sub-reactions-header">💭 주변 반응</div>';
+                        
+                        const reactionsList = document.createElement('div');
+                        reactionsList.className = 'sub-reactions-list';
+                        
+                        data.sub_reactions.forEach((react) => {
+                            const reactionItem = document.createElement('div');
+                            reactionItem.className = 'sub-reaction-item';
+                            
+                            // inner_thought 처리 (객체 또는 문자열)
+                            let thoughtText = '';
+                            if (react.inner_thought) {
+                                if (typeof react.inner_thought === 'object') {
+                                    thoughtText = react.inner_thought.thought || '';
+                                } else {
+                                    thoughtText = react.inner_thought;
+                                }
+                            }
+                            
+                            reactionItem.innerHTML = `
+                                <span class="reaction-character">${react.character_name}</span>
+                                <span class="reaction-text">${react.reaction}</span>
+                                ${thoughtText ? `<span class="reaction-thought">💭 ${thoughtText}</span>` : ''}
+                            `;
+                            reactionsList.appendChild(reactionItem);
+                        });
+                        
+                        subReactionsDiv.appendChild(reactionsList);
+                        
+                        // 메시지 영역에 추가
+                        setTimeout(() => {
+                            const chatArea = document.getElementById('chatArea');
+                            chatArea.appendChild(subReactionsDiv);
+                            chatArea.scrollTop = chatArea.scrollHeight;
+                        }, (data.main_responses?.length || 1) * 200 + 300);
+                    }
+                    
+                    // 3. 무반응 캐릭터 속마음 표시 (Scene Dashboard에만)
+                    // (Scene Context 업데이트에서 처리됨)
+                    
+                    // Scene Context 업데이트 (Dashboard)
+                    if (data.scene_context) {
+                        updateSceneDashboard(data.scene_context);
+                    }
+                    
+                    // 연쇄 반응 처리 (하위 호환성)
+                    if (data.chained_responses && data.chained_responses.length > 0) {
+                        data.chained_responses.forEach((chained, index) => {
+                            setTimeout(() => {
+                                addMessage('character', chained.character_response, chained.character_name, chained.character_id, null, null, chained.turn_id || data.turn_id);
+                            }, 500 + (index * 300));
+                        });
+                    }
+                } else {
+                    showError(data.detail || '응답을 받는 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                removeLoadingMessage(loadingId);
+                console.error('메시지 전송 오류:', error);
+                showError('메시지를 전송하는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 메시지 추가
+        function addMessage(type, content, name, characterId = null, turnCount = null, relationshipSummary = null, turnId = null, innerThought = null) {
+            const chatArea = document.getElementById('chatArea');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (type === 'character' && characterId) {
+                messageDiv.setAttribute('data-character-id', characterId);
+            }
+            if (turnId) {
+                messageDiv.setAttribute('data-turn-id', turnId);
+            }
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            const header = document.createElement('div');
+            header.className = 'message-header';
+            header.textContent = name;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            bubble.appendChild(header);
+            bubble.appendChild(messageContent);
+            
+            // 관계 데이터 요약 추가 (캐릭터 메시지에만)
+            if (type === 'character' && relationshipSummary) {
+                const relInfo = document.createElement('div');
+                relInfo.className = 'relationship-info';
+                relInfo.style.cssText = 'background: rgba(102, 126, 234, 0.1); padding: 8px 12px; border-radius: 8px; font-size: 11px; margin-top: 8px; line-height: 1.6;';
+                relInfo.innerHTML = `
+                    💕 친밀도: ${relationshipSummary.intimacy?.toFixed(1) || 0} | 
+                    ⚖️ Dominance: ${relationshipSummary.dominance?.toFixed(2) || 0} | 
+                    😊 기쁨: ${relationshipSummary.joy_peaks || 0} | 
+                    😠 화남: ${relationshipSummary.anger_peaks || 0} | 
+                    🔥 열광: ${relationshipSummary.excitement_peaks || 0}<br>
+                    ⭐ 기억: ${relationshipSummary.core_memories_count || 0}개 | 
+                    🔑 트리거: ${relationshipSummary.trigger_keywords_count || 0}개 | 
+                    💬 총 턴: ${relationshipSummary.total_turns || 0}턴
+                `;
+                bubble.appendChild(relInfo);
+            }
+            
+            // 속마음 표시 (캐릭터 메시지에만, 명세서 v2)
+            if (type === 'character' && innerThought) {
+                const innerThoughtDiv = document.createElement('div');
+                innerThoughtDiv.className = 'inner-thought';
+                innerThoughtDiv.style.cssText = 'background: rgba(102, 126, 234, 0.05); padding: 10px 12px; border-radius: 8px; margin-top: 8px; border-left: 3px solid #667eea; font-size: 12px; line-height: 1.6;';
+                
+                // innerThought가 문자열인 경우와 객체인 경우 처리
+                const thoughtText = typeof innerThought === 'string' ? innerThought : (innerThought.thought || innerThought);
+                const surfaceEmotion = typeof innerThought === 'object' ? (innerThought.surface_emotion || '') : '';
+                const innerEmotion = typeof innerThought === 'object' && innerThought.emotion_gap ? innerThought.inner_emotion : '';
+                const userEvaluation = typeof innerThought === 'object' ? (innerThought.user_evaluation || '') : '';
+                
+                innerThoughtDiv.innerHTML = `
+                    <div style="font-weight: 600; color: #667eea; margin-bottom: 6px;">💭 ${name}의 속마음</div>
+                    <div style="color: #555; margin-bottom: 8px;">${thoughtText || '...'}</div>
+                    ${surfaceEmotion ? `
+                    <div style="font-size: 11px; color: #888;">
+                        겉 감정: ${surfaceEmotion} 
+                        ${innerEmotion ? `(내면: ${innerEmotion})` : ''}
+                        ${userEvaluation ? `| 평가: ${userEvaluation}` : ''}
+                    </div>
+                    ` : ''}
+                `;
+                
+                bubble.appendChild(innerThoughtDiv);
+            }
+            
+            // 이모지 리액션 버튼 추가 (캐릭터 메시지에만)
+            if (type === 'character' && characterId && turnId) {
+                const emojiReactions = document.createElement('div');
+                emojiReactions.className = 'emoji-reactions';
+                emojiReactions.setAttribute('data-turn-id', turnId);
+                emojiReactions.setAttribute('data-character-id', characterId);
+                
+                const emojis = [
+                    { emoji: '❤️', label: '심쿵' },
+                    { emoji: '💢', label: '짜증' },
+                    { emoji: '🔥', label: '열광' },
+                    { emoji: '⭐', label: '기억해!' }
+                ];
+                
+                emojis.forEach(({ emoji, label }) => {
+                    const button = document.createElement('button');
+                    button.className = `emoji-button ${emoji}`;
+                    button.innerHTML = `
+                        <div>${emoji}</div>
+                        <div class="emoji-label">${label}</div>
+                    `;
+                    button.onclick = () => sendEmojiReaction(turnId, characterId, emoji, content);
+                    emojiReactions.appendChild(button);
+                });
+                
+                bubble.appendChild(emojiReactions);
+            }
+            
+            // 턴 카운터 추가
+            if (turnCount !== null) {
+                const turnCounter = document.createElement('div');
+                turnCounter.className = 'turn-counter';
+                turnCounter.textContent = `대화 ${turnCount}턴`;
+                bubble.appendChild(turnCounter);
+            }
+            
+            messageDiv.appendChild(bubble);
+            chatArea.appendChild(messageDiv);
+            
+            // 스크롤을 맨 아래로
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // 로딩 메시지 추가
+        function addLoadingMessage() {
+            const chatArea = document.getElementById('chatArea');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message character';
+            loadingDiv.id = 'loading-message';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+            
+            loadingDiv.appendChild(bubble);
+            chatArea.appendChild(loadingDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            return 'loading-message';
+        }
+
+        // 로딩 메시지 제거
+        function removeLoadingMessage(id) {
+            const loading = document.getElementById(id);
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        // 이모지 리액션 전송
+        async function sendEmojiReaction(turnId, characterId, emoji, characterResponse) {
+            try {
+                // 해당 턴의 유저 메시지 찾기 (히스토리에서)
+                // 가장 최근 유저 메시지 사용
+                const userMessages = messageHistory.filter(m => m.type === 'user');
+                const userMessage = userMessages.length > 0 ? userMessages[userMessages.length - 1].message : '';
+                
+                // 이모지 버튼 비활성화 (중복 클릭 방지)
+                // 특정 캐릭터의 버튼만 선택 (turnId + characterId 조합)
+                const emojiContainer = document.querySelector(`[data-turn-id="${turnId}"][data-character-id="${characterId}"]`);
+                const emojiButtons = emojiContainer ? emojiContainer.querySelectorAll('.emoji-button') : [];
+                emojiButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                });
+                
+                const response = await fetch(`${API_BASE}/api/reaction/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        character_id: characterId,
+                        turn_id: turnId,
+                        emoji: emoji,
+                        user_message: userMessage,
+                        character_response: characterResponse
+                    })
+                });
+                
+                // 응답 확인
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        errorData = { detail: errorText || `HTTP ${response.status}: ${response.statusText}` };
+                    }
+                    throw new Error(errorData.detail || `서버 오류 (${response.status})`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 이모지 버튼 활성화 표시 (특정 캐릭터의 버튼만)
+                    const emojiContainer = document.querySelector(`[data-turn-id="${turnId}"][data-character-id="${characterId}"]`);
+                    const emojiButtons = emojiContainer ? emojiContainer.querySelectorAll('.emoji-button') : [];
+                    emojiButtons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.style.opacity = '';
+                        // 선택된 이모지만 활성화
+                        if (btn.textContent.includes(emoji)) {
+                            btn.classList.add('active');
+                            // ❤️💢🔥는 상호 배타적
+                            if (emoji !== '⭐') {
+                                emojiButtons.forEach(otherBtn => {
+                                    if (otherBtn !== btn && !otherBtn.textContent.includes('⭐')) {
+                                        otherBtn.classList.remove('active');
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    
+                    // 성공 메시지 표시 (선택적, 콘솔에만)
+                    console.log('✅', data.message);
+                    
+                    // 관계 데이터 업데이트가 있으면 표시 (선택적)
+                    if (data.relationship_data) {
+                        console.log('📊 관계 데이터:', data.relationship_data);
+                    }
+                } else {
+                    throw new Error(data.detail || '이모지 리액션 처리 실패');
+                }
+            } catch (error) {
+                console.error('❌ 이모지 리액션 오류:', error);
+                
+                // 버튼 다시 활성화 (특정 캐릭터의 버튼만)
+                const emojiContainer = document.querySelector(`[data-turn-id="${turnId}"][data-character-id="${characterId}"]`);
+                const emojiButtons = emojiContainer ? emojiContainer.querySelectorAll('.emoji-button') : [];
+                emojiButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = '';
+                });
+                
+                // 사용자에게 오류 표시
+                const errorMessage = error.message || '이모지 리액션을 전송하는 중 오류가 발생했습니다.';
+                showError(errorMessage);
+            }
+        }
+
+        // Scene Dashboard 업데이트 (v2.1)
+        function updateSceneDashboard(sceneContext) {
+            if (!sceneContext) return;
+            
+            const dashboard = document.getElementById('sceneDashboard');
+            if (!dashboard) return;
+            
+            // Dashboard 표시
+            dashboard.classList.remove('hidden');
+            
+            // 장소
+            document.getElementById('currentLocation').textContent = 
+                `📍 ${sceneContext.location}`;
+            
+            // 긴장도
+            const tensionLevel = sceneContext.tension_level || 5;
+            const tensionPercent = Math.min(100, Math.max(0, tensionLevel * 10));
+            document.getElementById('tensionFill').style.width = `${tensionPercent}%`;
+            
+            // 스토리 요약 (최근 10턴)
+            if (sceneContext.story_arc && Array.isArray(sceneContext.story_arc) && sceneContext.story_arc.length > 0) {
+                // 최근 10턴의 스토리 요약을 줄바꿈으로 표시
+                const recentStory = sceneContext.story_arc.slice(-10).join('\n\n');
+                document.getElementById('storySummaryText').textContent = recentStory;
+                // 줄바꿈을 위해 white-space 설정
+                document.getElementById('storySummaryText').style.whiteSpace = 'pre-line';
+                console.log('[Story Summary] 표시됨:', sceneContext.story_arc.length, '개');
+            } else {
+                console.log('[Story Summary] story_arc 없음:', sceneContext.story_arc);
+                // story_arc가 없으면 recent_events에서 요약 생성
+                if (sceneContext.recent_events && Array.isArray(sceneContext.recent_events) && sceneContext.recent_events.length > 0) {
+                    const recentEvents = sceneContext.recent_events.slice(-10).map(e => e.summary || `${e.speaker_name}의 행동`).join('\n\n');
+                    document.getElementById('storySummaryText').textContent = recentEvents;
+                    document.getElementById('storySummaryText').style.whiteSpace = 'pre-line';
+                } else {
+                    document.getElementById('storySummaryText').textContent = '-';
+                }
+            }
+            
+            // 캐릭터 상태
+            const charStatesContainer = document.getElementById('characterStates');
+            const existingCards = charStatesContainer.querySelectorAll('.char-state-card');
+            existingCards.forEach(card => card.remove());
+            
+            if (sceneContext.character_states) {
+                for (const [charId, state] of Object.entries(sceneContext.character_states)) {
+                    const card = createCharacterStateCard(charId, state);
+                    charStatesContainer.appendChild(card);
+                }
+            }
+            
+            // 현재 포커스 (메인 응답자들 기반으로 수정)
+            let focusText = '대화 없음';
+            if (sceneContext.main_speakers && sceneContext.main_speakers.length > 0) {
+                // 메인 응답자들이 있으면 "유저 ↔ 캐릭터1, 캐릭터2" 형식
+                const mainSpeakers = sceneContext.main_speakers.join(', ');
+                focusText = `유저 ↔ ${mainSpeakers}`;
+            } else if (sceneContext.last_speaker_name) {
+                // 메인 응답자가 없으면 last_speaker_name 사용
+                focusText = `유저 ↔ ${sceneContext.last_speaker_name}`;
+            } else if (sceneContext.current_focus) {
+                focusText = sceneContext.current_focus;
+            }
+            document.getElementById('currentFocusText').textContent = focusText;
+        }
+
+        function createCharacterStateCard(charId, state) {
+            const card = document.createElement('div');
+            card.className = `char-state-card ${state.recent ? 'recent' : ''} ${state.attention === 'none' ? 'inactive' : ''}`;
+            card.dataset.charId = charId;
+            
+            const moodEmoji = getMoodEmoji(state.current_mood || 'neutral');
+            const attentionText = getAttentionText(state.attention, state.attention_target);
+            
+            card.innerHTML = `
+                <div class="char-header">
+                    <span class="char-mood">${moodEmoji}</span>
+                    <span class="char-name">${state.character_name}</span>
+                    <span class="char-attention">[${attentionText}]</span>
+                    ${state.recent ? '<span class="recent-badge">● recent</span>' : ''}
+                </div>
+                <div class="char-thought">
+                    💭 "${state.inner_thought || '...'}"
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function getMoodEmoji(mood) {
+            const moodMap = {
+                'angry': '😤',
+                'annoyed': '😒',
+                'amused': '😏',
+                'happy': '😊',
+                'sad': '😢',
+                'sleepy': '😴',
+                'nervous': '😰',
+                'neutral': '😐',
+                'curious': '🤔',
+                'hostile': '😠'
+            };
+            return moodMap[mood] || '😐';
+        }
+
+        function getAttentionText(attention, target) {
+            // attention 기반으로 동적 상태 텍스트 생성
+            if (attention === 'user') {
+                return '유저 주시 중';
+            } else if (attention === 'character') {
+                return target ? `${target} 주시 중` : '다른 캐릭터 주시 중';
+            } else if (attention === 'observing') {
+                return '상황 관찰 중';
+            } else if (attention === 'none') {
+                return '관심 없음';
+            }
+            return '상황 관찰 중';  // 기본값
+        }
+
+        // 에러 메시지 표시
+        function showError(message) {
+            const chatArea = document.getElementById('chatArea');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            
+            // API 키 관련 오류인 경우 더 자세한 안내 추가
+            let errorContent = `❌ ${message}`;
+            if (message.includes('API 키') || message.includes('suspended') || message.includes('정지')) {
+                errorContent += '\n\n💡 해결 방법:\n1. .env 파일의 GEMINI_API_KEY를 확인하세요.\n2. Google AI Studio (https://aistudio.google.com/)에서 새로운 API 키를 발급받으세요.\n3. .env 파일에 GEMINI_API_KEY=your_new_api_key 형식으로 저장하세요.';
+            }
+            
+            errorDiv.innerHTML = errorContent.replace(/\n/g, '<br>');
+            chatArea.appendChild(errorDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // API 키 오류는 더 오래 표시
+            const autoRemoveDelay = message.includes('API 키') || message.includes('suspended') || message.includes('정지') ? 10000 : 5000;
+            setTimeout(() => {
+                errorDiv.remove();
+            }, autoRemoveDelay);
+        }
+
+        // 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeChat();
+        });
+    </script>
+</body>
+</html>
