@@ -79,11 +79,21 @@ SUPERBASE_SECRET_KEY=your_supabase_secret_key
 
 **⚠️ 중요**: `.env` 파일은 절대 GitHub에 커밋하지 마세요!
 
-#### 4. Supabase 데이터베이스 설정
+#### 4. 데이터베이스 초기화 및 시딩
 
-1. Supabase 대시보드 접속: https://supabase.com/dashboard
-2. 새 프로젝트 생성
-3. SQL Editor에서 `supabase_schema.sql` 파일의 내용 실행
+**데이터베이스 자동 초기화:**
+- 서버 실행 시 자동으로 SQLite 데이터베이스(`synk_mvp.db`)가 생성됩니다
+
+**캐릭터 데이터 시딩 (선택사항):**
+```bash
+python scripts/seed_characters.py
+```
+
+이 스크립트는 다음을 시딩합니다:
+- 장소: 4개 (베타 동 로비, 지하 훈련장, 아카데미 정문, 의무실)
+- 캐릭터: 9명 (각 장소별 캐릭터)
+
+**참고**: 여러 번 실행해도 안전합니다 (중복 체크 포함)
 
 #### 5. 서버 실행
 
