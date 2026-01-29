@@ -568,13 +568,13 @@
             font-weight: 600;
         }
 
-        /* Scene Dashboard (v2.1) */
+        /* Scene Dashboard (v2.1) - 채팅 메시지 영역 내부에 배치 */
         .scene-dashboard {
             background: #f8f9fa;
+            border-top: 2px solid #e0e0e0;
             border-bottom: 2px solid #e0e0e0;
             padding: 20px 30px;
-            max-height: 300px;
-            overflow-y: auto;
+            margin-top: 20px;
             transition: all 0.3s ease;
         }
 
@@ -853,37 +853,37 @@
             <div class="characters-info" id="charactersInfo"></div>
         </div>
 
-        <!-- Scene Dashboard (v2.1) -->
-        <div class="scene-dashboard hidden" id="sceneDashboard">
-            <div class="dashboard-header">
-                <h3>🎭 현재 상황</h3>
-                <span class="location-badge" id="currentLocation">📍 -</span>
-                <div class="tension-bar">
-                    <span>긴장도:</span>
-                    <div class="bar-container">
-                        <div class="bar-fill" id="tensionFill" style="width: 50%;"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="story-summary" id="storySummary">
-                <h4>📖 스토리 요약</h4>
-                <p id="storySummaryText">-</p>
-            </div>
-            
-            <div class="character-states" id="characterStates">
-                <h4>👥 캐릭터 상태</h4>
-                <!-- 동적 생성 -->
-            </div>
-            
-            <div class="current-focus" id="currentFocus">
-                <span>🎯 현재 대화:</span>
-                <strong id="currentFocusText">-</strong>
-            </div>
-        </div>
-
         <div class="chat-area" id="chatArea">
             <!-- 대화 메시지들이 여기에 표시됩니다 -->
+            
+            <!-- Scene Dashboard (v2.1) - 채팅 메시지 맨 아래에 배치 -->
+            <div class="scene-dashboard hidden" id="sceneDashboard">
+                <div class="dashboard-header">
+                    <h3>🎭 현재 상황</h3>
+                    <span class="location-badge" id="currentLocation">📍 -</span>
+                    <div class="tension-bar">
+                        <span>긴장도:</span>
+                        <div class="bar-container">
+                            <div class="bar-fill" id="tensionFill" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="story-summary" id="storySummary">
+                    <h4>📖 스토리 요약</h4>
+                    <p id="storySummaryText">-</p>
+                </div>
+                
+                <div class="character-states" id="characterStates">
+                    <h4>👥 캐릭터 상태</h4>
+                    <!-- 동적 생성 -->
+                </div>
+                
+                <div class="current-focus" id="currentFocus">
+                    <span>🎯 현재 대화:</span>
+                    <strong id="currentFocusText">-</strong>
+                </div>
+            </div>
         </div>
 
         <!-- 선택지 버튼 영역 -->
@@ -1311,7 +1311,14 @@
             }
             
             messageDiv.appendChild(bubble);
-            chatArea.appendChild(messageDiv);
+            
+            // 현재 상황 패널 앞에 메시지 삽입
+            const sceneDashboard = document.getElementById('sceneDashboard');
+            if (sceneDashboard && sceneDashboard.parentNode === chatArea) {
+                chatArea.insertBefore(messageDiv, sceneDashboard);
+            } else {
+                chatArea.appendChild(messageDiv);
+            }
             
             // 스크롤을 맨 아래로
             chatArea.scrollTop = chatArea.scrollHeight;
