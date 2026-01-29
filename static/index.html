@@ -1133,55 +1133,7 @@
                         addMessage('character', data.character_response, data.character_name, data.character_id, data.conversation_turn, data.relationship_summary, data.turn_id, data.inner_thought);
                     }
                     
-                    // 2. 서브 리액션 표시
-                    if (data.sub_reactions && data.sub_reactions.length > 0) {
-                        // 서브 리액션 패널 생성
-                        const subReactionsDiv = document.createElement('div');
-                        subReactionsDiv.className = 'sub-reactions-panel';
-                        subReactionsDiv.innerHTML = '<div class="sub-reactions-header">💭 주변 반응</div>';
-                        
-                        const reactionsList = document.createElement('div');
-                        reactionsList.className = 'sub-reactions-list';
-                        
-                        data.sub_reactions.forEach((react) => {
-                            const reactionItem = document.createElement('div');
-                            reactionItem.className = 'sub-reaction-item';
-                            
-                            // inner_thought 처리 (객체 또는 문자열)
-                            let thoughtText = '';
-                            if (react.inner_thought) {
-                                if (typeof react.inner_thought === 'object') {
-                                    thoughtText = react.inner_thought.thought || '';
-                                } else {
-                                    thoughtText = react.inner_thought;
-                                }
-                            }
-                            
-                            reactionItem.innerHTML = `
-                                <span class="reaction-character">${react.character_name}</span>
-                                <span class="reaction-text">${react.reaction}</span>
-                                ${thoughtText ? `<span class="reaction-thought">💭 ${thoughtText}</span>` : ''}
-                            `;
-                            reactionsList.appendChild(reactionItem);
-                        });
-                        
-                        subReactionsDiv.appendChild(reactionsList);
-                        
-                        // 메시지 영역에 추가
-                        setTimeout(() => {
-                            const chatArea = document.getElementById('chatArea');
-                            // 현재 상황 패널 앞에 서브 리액션 삽입
-                            const sceneDashboard = document.getElementById('sceneDashboard');
-                            if (sceneDashboard && sceneDashboard.parentNode === chatArea) {
-                                chatArea.insertBefore(subReactionsDiv, sceneDashboard);
-                            } else {
-                                chatArea.appendChild(subReactionsDiv);
-                            }
-                            chatArea.scrollTop = chatArea.scrollHeight;
-                        }, (data.main_responses?.length || 1) * 200 + 300);
-                    }
-                    
-                    // 3. 무반응 캐릭터 속마음 표시 (Scene Dashboard에만)
+                    // 2. 무반응 캐릭터 속마음 표시 (Scene Dashboard에만)
                     // (Scene Context 업데이트에서 처리됨)
                     
                     // Scene Context 업데이트 (Dashboard)
