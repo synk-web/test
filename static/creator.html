@@ -40,73 +40,6 @@
             opacity: 0.9;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .header-content {
-            flex: 1;
-        }
-
-        .auth-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .login-button {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .login-button:hover {
-            background: #f0f0f0;
-            transform: translateY(-1px);
-        }
-
-        .logout-button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .logout-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
         .nav-tabs {
             display: flex;
             gap: 10px;
@@ -489,26 +422,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <h1>🎨 SYNK 창작자 스튜디오</h1>
-                <p>캐릭터와 작품을 쉽고 편리하게 만들어보세요</p>
-            </div>
-            <div class="auth-section" id="authSection">
-                <div id="userInfo" class="user-info" style="display: none;">
-                    <img id="userAvatar" class="user-avatar" src="" alt="User">
-                    <span id="userName"></span>
-                    <button class="logout-button" onclick="handleLogout()">로그아웃</button>
-                </div>
-                <button id="loginButton" class="login-button" onclick="handleGoogleLogin()">
-                    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.96-2.184l-2.908-2.258c-.806.54-1.837.86-3.052.86-2.35 0-4.34-1.586-5.052-3.717H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.948 10.701c-.18-.54-.282-1.117-.282-1.701s.102-1.161.282-1.701V4.967H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.033l2.991-2.332z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.967L3.948 7.3C4.66 5.17 6.65 3.58 9 3.58z"/>
-                    </svg>
-                    Google로 로그인
-                </button>
-            </div>
+            <h1>🎨 SYNK 창작자 스튜디오</h1>
+            <p>캐릭터와 작품을 쉽고 편리하게 만들어보세요</p>
         </div>
 
         <div class="nav-tabs">
@@ -763,126 +678,10 @@
         </div>
     </div>
 
-    <!-- Supabase JS 클라이언트 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script>
         // API_BASE 자동 감지 (서버를 통해 접근할 때는 상대 경로 사용)
         const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
         let currentWorkId = null;
-        
-        // Supabase 클라이언트 초기화
-        let supabaseClient = null;
-        let currentUser = null;
-        
-        // Supabase 설정 로드 및 초기화
-        async function initSupabase() {
-            try {
-                const response = await fetch(`${API_BASE}/api/auth/config`);
-                const config = await response.json();
-                
-                supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
-                
-                // 세션 확인
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session) {
-                    await updateUserInfo(session.user);
-                }
-                
-                // 인증 상태 변경 감지
-                supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                    if (event === 'SIGNED_IN' && session) {
-                        await updateUserInfo(session.user);
-                    } else if (event === 'SIGNED_OUT') {
-                        currentUser = null;
-                        updateAuthUI();
-                    }
-                });
-            } catch (error) {
-                console.error('Supabase 초기화 실패:', error);
-            }
-        }
-        
-        // 사용자 정보 업데이트
-        async function updateUserInfo(user) {
-            currentUser = user;
-            updateAuthUI();
-        }
-        
-        // 인증 UI 업데이트
-        function updateAuthUI() {
-            const userInfoDiv = document.getElementById('userInfo');
-            const loginButton = document.getElementById('loginButton');
-            
-            if (currentUser) {
-                userInfoDiv.style.display = 'flex';
-                loginButton.style.display = 'none';
-                
-                document.getElementById('userName').textContent = 
-                    currentUser.user_metadata?.name || currentUser.email || '사용자';
-                document.getElementById('userAvatar').src = 
-                    currentUser.user_metadata?.avatar_url || 
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=667eea&color=fff`;
-            } else {
-                userInfoDiv.style.display = 'none';
-                loginButton.style.display = 'flex';
-            }
-        }
-        
-        // Google 로그인
-        async function handleGoogleLogin() {
-            if (!supabaseClient) {
-                await initSupabase();
-            }
-            
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin + window.location.pathname
-                    }
-                });
-                
-                if (error) {
-                    console.error('Google 로그인 오류:', error);
-                    alert('로그인 중 오류가 발생했습니다: ' + error.message);
-                }
-            } catch (error) {
-                console.error('Google 로그인 실패:', error);
-                alert('로그인 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // 로그아웃
-        async function handleLogout() {
-            if (!supabaseClient) {
-                await initSupabase();
-            }
-            
-            try {
-                const { error } = await supabaseClient.auth.signOut();
-                if (error) {
-                    console.error('로그아웃 오류:', error);
-                    alert('로그아웃 중 오류가 발생했습니다.');
-                } else {
-                    currentUser = null;
-                    updateAuthUI();
-                    alert('로그아웃되었습니다.');
-                }
-            } catch (error) {
-                console.error('로그아웃 실패:', error);
-                alert('로그아웃 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // getAuthToken 함수 업데이트
-        function getAuthToken() {
-            // Supabase 세션에서 토큰 가져오기
-            if (supabaseClient && currentUser) {
-                return supabaseClient.auth.session()?.access_token || '';
-            }
-            return localStorage.getItem('auth_token') || '';
-        }
         let currentTags = [];
         let editingCharacterId = null;
         let editingImageId = null;
@@ -1208,10 +1007,13 @@
             }
         }
 
+        // getAuthToken 함수 (임시 - 나중에 인증 구현 시 사용)
+        function getAuthToken() {
+            return localStorage.getItem('auth_token') || '';
+        }
+
         // 초기화
-        window.addEventListener('DOMContentLoaded', async () => {
-            await initSupabase();
-            
+        window.addEventListener('DOMContentLoaded', () => {
             // 임시저장 데이터 로드
             const draft = localStorage.getItem('work_draft');
             if (draft) {

@@ -15,13 +15,13 @@ from api.opening import router as opening_router
 from api.reaction import router as reaction_router
 from api.user_profile import router as user_profile_router
 
-# 창작자 스튜디오 라우터
-from api.auth import router as auth_router
-from api.creator_works import router as creator_works_router
-from api.creator_characters import router as creator_characters_router
-from api.creator_images import router as creator_images_router
-from api.creator_lorebook import router as creator_lorebook_router
-from api.creator_openings import router as creator_openings_router
+# 창작자 스튜디오 라우터 (Supabase 연동 - 현재 비활성화)
+# from api.auth import router as auth_router
+# from api.creator_works import router as creator_works_router
+# from api.creator_characters import router as creator_characters_router
+# from api.creator_images import router as creator_images_router
+# from api.creator_lorebook import router as creator_lorebook_router
+# from api.creator_openings import router as creator_openings_router
 
 # DB 초기화
 from db.character_db import init_character_db
@@ -50,13 +50,13 @@ app.include_router(opening_router)
 app.include_router(reaction_router)
 app.include_router(user_profile_router)
 
-# 창작자 스튜디오 라우터
-app.include_router(auth_router)
-app.include_router(creator_works_router)
-app.include_router(creator_characters_router)
-app.include_router(creator_images_router)
-app.include_router(creator_lorebook_router)
-app.include_router(creator_openings_router)
+# 창작자 스튜디오 라우터 (Supabase 연동 - 현재 비활성화)
+# app.include_router(auth_router)
+# app.include_router(creator_works_router)
+# app.include_router(creator_characters_router)
+# app.include_router(creator_images_router)
+# app.include_router(creator_lorebook_router)
+# app.include_router(creator_openings_router)
 
 # 정적 파일 서빙 (UI)
 static_dir = os.path.join(os.path.dirname(__file__), "static")

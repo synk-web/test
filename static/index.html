@@ -134,61 +134,6 @@
             gap: 15px;
         }
 
-        .auth-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .login-button {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .login-button:hover {
-            background: #f0f0f0;
-            transform: translateY(-1px);
-        }
-
-        .logout-button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .logout-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
         .header h1 {
             font-size: 24px;
             font-weight: 600;
@@ -902,28 +847,10 @@
     <div class="container chat-screen" id="chatScreen">
         <div class="header">
             <h1>💬 SYNK MVP - 멀티 캐릭터 챗</h1>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <div class="location-info" id="locationInfo">
-                    <span id="locationName">-</span>
-                </div>
-                <div class="characters-info" id="charactersInfo"></div>
+            <div class="location-info" id="locationInfo">
+                <span id="locationName">-</span>
             </div>
-            <div class="auth-section" id="authSection">
-                <div id="userInfo" class="user-info" style="display: none;">
-                    <img id="userAvatar" class="user-avatar" src="" alt="User">
-                    <span id="userName"></span>
-                    <button class="logout-button" onclick="handleLogout()">로그아웃</button>
-                </div>
-                <button id="loginButton" class="login-button" onclick="handleGoogleLogin()">
-                    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.96-2.184l-2.908-2.258c-.806.54-1.837.86-3.052.86-2.35 0-4.34-1.586-5.052-3.717H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.948 10.701c-.18-.54-.282-1.117-.282-1.701s.102-1.161.282-1.701V4.967H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.033l2.991-2.332z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.967L3.948 7.3C4.66 5.17 6.65 3.58 9 3.58z"/>
-                    </svg>
-                    Google로 로그인
-                </button>
-            </div>
+            <div class="characters-info" id="charactersInfo"></div>
         </div>
 
         <!-- Scene Dashboard (v2.1) -->
@@ -974,9 +901,6 @@
         </div>
     </div>
 
-    <!-- Supabase JS 클라이언트 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script>
         const API_BASE = '';
         let currentLocationId = '';
@@ -987,128 +911,6 @@
         let openingScenarios = [];
         let waitingForOpeningChoice = false;
         let messageHistory = [];  // 턴 히스토리 (이모지 리액션용)
-        
-        // Supabase 클라이언트 초기화
-        let supabaseClient = null;
-        let currentUser = null;
-        
-        // Supabase 설정 로드 및 초기화
-        async function initSupabase() {
-            try {
-                const response = await fetch(`${API_BASE}/api/auth/config`);
-                const config = await response.json();
-                
-                supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
-                
-                // 세션 확인
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session) {
-                    await updateUserInfo(session.user);
-                }
-                
-                // 인증 상태 변경 감지
-                supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                    if (event === 'SIGNED_IN' && session) {
-                        await updateUserInfo(session.user);
-                    } else if (event === 'SIGNED_OUT') {
-                        currentUser = null;
-                        updateAuthUI();
-                    }
-                });
-            } catch (error) {
-                console.error('Supabase 초기화 실패:', error);
-            }
-        }
-        
-        // 사용자 정보 업데이트
-        async function updateUserInfo(user) {
-            currentUser = user;
-            currentUserId = user.id;
-            updateAuthUI();
-        }
-        
-        // 인증 UI 업데이트
-        function updateAuthUI() {
-            const userInfoDiv = document.getElementById('userInfo');
-            const loginButton = document.getElementById('loginButton');
-            
-            if (currentUser) {
-                userInfoDiv.style.display = 'flex';
-                loginButton.style.display = 'none';
-                
-                document.getElementById('userName').textContent = 
-                    currentUser.user_metadata?.name || currentUser.email || '사용자';
-                document.getElementById('userAvatar').src = 
-                    currentUser.user_metadata?.avatar_url || 
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email || 'User')}&background=667eea&color=fff`;
-            } else {
-                userInfoDiv.style.display = 'none';
-                loginButton.style.display = 'flex';
-            }
-        }
-        
-        // Google 로그인
-        async function handleGoogleLogin() {
-            if (!supabaseClient) {
-                await initSupabase();
-            }
-            
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin + window.location.pathname
-                    }
-                });
-                
-                if (error) {
-                    console.error('Google 로그인 오류:', error);
-                    showError('로그인 중 오류가 발생했습니다: ' + error.message);
-                }
-                // 성공 시 자동으로 리다이렉트됨
-            } catch (error) {
-                console.error('Google 로그인 실패:', error);
-                showError('로그인 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // 로그아웃
-        async function handleLogout() {
-            if (!supabaseClient) {
-                await initSupabase();
-            }
-            
-            try {
-                const { error } = await supabaseClient.auth.signOut();
-                if (error) {
-                    console.error('로그아웃 오류:', error);
-                    showError('로그아웃 중 오류가 발생했습니다.');
-                } else {
-                    currentUser = null;
-                    currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
-                    updateAuthUI();
-                    showSuccess('로그아웃되었습니다.');
-                }
-            } catch (error) {
-                console.error('로그아웃 실패:', error);
-                showError('로그아웃 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // 성공 메시지 표시 함수 추가
-        function showSuccess(message) {
-            const chatArea = document.getElementById('chatArea');
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-message';
-            successDiv.style.cssText = 'background: #efe; color: #3c3; padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3c3;';
-            successDiv.textContent = `✅ ${message}`;
-            chatArea.appendChild(successDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-            
-            setTimeout(() => {
-                successDiv.remove();
-            }, 3000);
-        }
 
         // 초기화: 채팅방에 바로 진입
         async function initializeChat() {
@@ -1778,8 +1580,7 @@
         }
 
         // 초기화
-        window.addEventListener('DOMContentLoaded', async () => {
-            await initSupabase();
+        window.addEventListener('DOMContentLoaded', () => {
             initializeChat();
         });
     </script>
