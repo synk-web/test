@@ -1209,7 +1209,9 @@
         }
 
         // 초기화
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initSupabase();
+            
             // 임시저장 데이터 로드
             const draft = localStorage.getItem('work_draft');
             if (draft) {
