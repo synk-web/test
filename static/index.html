@@ -1170,7 +1170,13 @@
                         // 메시지 영역에 추가
                         setTimeout(() => {
                             const chatArea = document.getElementById('chatArea');
-                            chatArea.appendChild(subReactionsDiv);
+                            // 현재 상황 패널 앞에 서브 리액션 삽입
+                            const sceneDashboard = document.getElementById('sceneDashboard');
+                            if (sceneDashboard && sceneDashboard.parentNode === chatArea) {
+                                chatArea.insertBefore(subReactionsDiv, sceneDashboard);
+                            } else {
+                                chatArea.appendChild(subReactionsDiv);
+                            }
                             chatArea.scrollTop = chatArea.scrollHeight;
                         }, (data.main_responses?.length || 1) * 200 + 300);
                     }
@@ -1336,7 +1342,14 @@
             bubble.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
             
             loadingDiv.appendChild(bubble);
-            chatArea.appendChild(loadingDiv);
+            
+            // 현재 상황 패널 앞에 로딩 메시지 삽입
+            const sceneDashboard = document.getElementById('sceneDashboard');
+            if (sceneDashboard && sceneDashboard.parentNode === chatArea) {
+                chatArea.insertBefore(loadingDiv, sceneDashboard);
+            } else {
+                chatArea.appendChild(loadingDiv);
+            }
             chatArea.scrollTop = chatArea.scrollHeight;
             
             return 'loading-message';
@@ -1576,7 +1589,14 @@
             }
             
             errorDiv.innerHTML = errorContent.replace(/\n/g, '<br>');
-            chatArea.appendChild(errorDiv);
+            
+            // 현재 상황 패널 앞에 에러 메시지 삽입
+            const sceneDashboard = document.getElementById('sceneDashboard');
+            if (sceneDashboard && sceneDashboard.parentNode === chatArea) {
+                chatArea.insertBefore(errorDiv, sceneDashboard);
+            } else {
+                chatArea.appendChild(errorDiv);
+            }
             chatArea.scrollTop = chatArea.scrollHeight;
             
             // API 키 오류는 더 오래 표시
