@@ -473,11 +473,24 @@ def seed_characters():
 
 
 def main():
-    """시딩 실행"""
+    """
+    캐릭터 및 장소 데이터 시딩 실행
+    
+    이 스크립트는 SQLite 데이터베이스(synk_mvp.db)에 초기 캐릭터와 장소 데이터를 삽입합니다.
+    
+    실행 방법:
+        python scripts/seed_characters.py
+    
+    주의사항:
+        - 이미 존재하는 캐릭터/장소는 건너뜀 (중복 체크)
+        - 여러 번 실행해도 안전함
+        - 서버 실행 전에 한 번 실행하면 됨
+    """
     print("\n🌱 SYNK MVP 데이터 시딩 시작\n")
     print("=" * 50)
     
     # DB 초기화
+    print("[데이터베이스 초기화]")
     init_character_db()
     print("✅ 데이터베이스 초기화 완료")
     print()
@@ -496,11 +509,17 @@ def main():
     print("✅ 시딩 완료!")
     print("\n📊 시딩된 데이터:")
     print("  - 장소: 4개")
+    print("    • 베타 동 로비")
+    print("    • 지하 훈련장")
+    print("    • 아카데미 정문")
+    print("    • 의무실")
     print("  - 캐릭터: 9명")
-    print("    • 베타 동 로비: 5명")
-    print("    • 지하 훈련장: 2명")
-    print("    • 아카데미 정문: 1명")
-    print("    • 의무실: 1명")
+    print("    • 베타 동 로비: 5명 (주창윤, 황인하, 표다은, 민아름, 고선하)")
+    print("    • 지하 훈련장: 2명 (신채린, 권우미)")
+    print("    • 아카데미 정문: 1명 (이가은)")
+    print("    • 의무실: 1명 (심나은)")
+    print("\n💡 이제 서버를 실행하면 시딩된 캐릭터들과 대화할 수 있습니다!")
+    print("   python main.py")
 
 
 if __name__ == "__main__":
