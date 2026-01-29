@@ -26,20 +26,44 @@ AI 캐릭터와의 대화 시스템 및 창작자 스튜디오
 
 ## 🛠️ 설치 및 실행
 
-### 1. 저장소 클론
+### 방법 1: GitHub Codespaces (추천 - 웹에서 바로 실행)
+
+1. **Codespaces 생성**
+   - 저장소 페이지에서 "Code" → "Codespaces" → "Create codespace on main"
+   - 또는: https://github.com/codespaces/new?repo=synk-web/test
+
+2. **환경 변수 설정**
+   ```bash
+   cp .env.example .env
+   # .env 파일 편집하여 API 키 입력
+   ```
+
+3. **서버 실행**
+   ```bash
+   python main.py
+   ```
+
+4. **포트 포워딩**
+   - Codespaces가 자동으로 포트 8000을 포워딩
+   - "Ports" 탭에서 "Public"으로 변경하면 공개 URL 생성
+   - "Open in Browser" 클릭하여 접속
+
+### 방법 2: 로컬 실행
+
+#### 1. 저장소 클론
 
 ```bash
-git clone <repository-url>
-cd v0
+git clone https://github.com/synk-web/test.git
+cd test
 ```
 
-### 2. 의존성 설치
+#### 2. 의존성 설치
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. 환경 변수 설정
+#### 3. 환경 변수 설정
 
 `.env` 파일을 생성하고 다음을 추가하세요:
 
@@ -55,13 +79,13 @@ SUPERBASE_SECRET_KEY=your_supabase_secret_key
 
 **⚠️ 중요**: `.env` 파일은 절대 GitHub에 커밋하지 마세요!
 
-### 4. Supabase 데이터베이스 설정
+#### 4. Supabase 데이터베이스 설정
 
 1. Supabase 대시보드 접속: https://supabase.com/dashboard
 2. 새 프로젝트 생성
 3. SQL Editor에서 `supabase_schema.sql` 파일의 내용 실행
 
-### 5. 서버 실행
+#### 5. 서버 실행
 
 ```bash
 python main.py
